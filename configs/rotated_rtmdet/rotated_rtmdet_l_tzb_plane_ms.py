@@ -4,7 +4,9 @@ model = dict(
     bbox_head=dict(num_classes=1))
 
 dataset_type = "TzbPlaneDataset"
-data_root = 'data/Tianzhi/plane_split/'
+data_root = 'data/Tianzhi/plane/total_split'
+
+train_dataloader = dict(batch_size=2, num_workers=4)
 
 train_dataloader = dict(
     dataset=dict(

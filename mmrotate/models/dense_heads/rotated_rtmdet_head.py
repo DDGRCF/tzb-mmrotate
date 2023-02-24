@@ -1,7 +1,5 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import copy
-from typing import List, Optional, Tuple
-
 import torch
 from mmcv.cnn import ConvModule, Scale, is_norm
 from mmdet.models import inverse_sigmoid
@@ -9,14 +7,15 @@ from mmdet.models.dense_heads import RTMDetHead
 from mmdet.models.task_modules import anchor_inside_flags
 from mmdet.models.utils import (filter_scores_and_topk, multi_apply,
                                 select_single_mlvl, sigmoid_geometric_mean,
-                                unmap)
+                                unmap,)
 from mmdet.structures.bbox import bbox_cxcywh_to_xyxy, cat_boxes, distance2bbox
 from mmdet.utils import (ConfigType, InstanceList, OptConfigType,
-                         OptInstanceList, reduce_mean)
+                         OptInstanceList, reduce_mean,)
 from mmengine import ConfigDict
 from mmengine.model import bias_init_with_prob, constant_init, normal_init
 from mmengine.structures import InstanceData
 from torch import Tensor, nn
+from typing import List, Optional, Tuple
 
 from mmrotate.registry import MODELS, TASK_UTILS
 from mmrotate.structures import RotatedBoxes, distance2obb
@@ -219,7 +218,6 @@ class RotatedRTMDetHead(RTMDetHead):
                 pos_decode_bbox_targets,
                 weight=pos_bbox_weight,
                 avg_factor=1.0)
-
         else:
             loss_bbox = bbox_pred.sum() * 0
             pos_bbox_weight = bbox_targets.new_tensor(0.)
