@@ -13,7 +13,6 @@ from mmengine.runner.checkpoint import CheckpointLoader
 from mmengine.utils.dl_utils.parrots_wrapper import _BatchNorm
 
 from mmrotate.registry import MODELS
-from .base_backbone import BaseBackbone
 
 
 class MixFFN(BaseModule):
@@ -258,7 +257,7 @@ class VANPatchEmbed(PatchEmbed):
 
 
 @MODELS.register_module()
-class VAN(BaseBackbone):
+class VAN(BaseModule):
     """Visual Attention Network.
 
     A PyTorch implement of : `Visual Attention Network
