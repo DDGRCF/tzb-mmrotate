@@ -68,14 +68,3 @@ optim_wrapper = dict(
     paramwise_cfg=dict(_delete_=True, custom_keys=custom_keys, norm_decay_mult=0.0))
 
 max_epochs = 12
-
-# param_scheduler = [
-#     dict(
-#         type='CosineAnnealingLR',
-#         eta_min=base_lr * 0.01,
-#         begin=max_epochs // 2,
-#         end=max_epochs,
-#         T_max=max_epochs // 2,
-#         by_epoch=True,
-#         convert_to_iter_based=True),
-# ]

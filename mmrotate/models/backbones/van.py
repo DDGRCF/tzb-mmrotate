@@ -7,8 +7,6 @@ from mmcv.cnn.bricks import DropPath
 from mmcv.cnn.bricks.transformer import PatchEmbed
 from mmengine.logging import MMLogger
 from mmengine.model import BaseModule, ModuleList
-from mmengine.model.weight_init import (constant_init, trunc_normal_,
-                                        trunc_normal_init,)
 from mmengine.runner.checkpoint import CheckpointLoader
 from mmengine.utils.dl_utils.parrots_wrapper import _BatchNorm
 
