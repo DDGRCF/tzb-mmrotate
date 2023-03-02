@@ -1,8 +1,9 @@
-# dataset settings
-dataset_type = 'DOTADataset'
-data_root = 'data/split_ms_dota/'
-file_client_args = dict(backend='disk')
+_base_ = './roi-trans-le90_swin-tiny_fpn_1x_dota.py'
 
+dataset_type = "TzbShipDataset"
+data_root = 'data/Tianzhi/ship/'
+
+file_client_args = dict(backend='disk')
 train_pipeline = [
     dict(type='mmdet.LoadImageFromFile', file_client_args=file_client_args),
     dict(type='mmdet.LoadAnnotations', with_bbox=True, box_type='qbox'),
@@ -38,58 +39,30 @@ test_pipeline = [
         meta_keys=('img_id', 'img_path', 'ori_shape', 'img_shape',
                    'scale_factor'))
 ]
+
 train_dataloader = dict(
+    dataset=dict(
+        type=dataset_type,
+        data_root=data_root,
+        ann_file='train_split/annfiles/',
+        data_prefix=dict(img_path='train_split/images/'),
+        filter_cfg=dict(filter_empty_gt=True), # TODO: True
+        pipeline=train_pipeline))
+
+val_dataloader = dict(
     batch_size=2,
     num_workers=2,
-    persistent_workers=True,
-    sampler=dict(type='DefaultSampler', shuffle=True),
-    batch_sampler=None,
     dataset=dict(
         type=dataset_type,
         data_root=data_root,
-        ann_file='trainval/annfiles/',
-        data_prefix=dict(img_path='trainval/images/'),
-        img_shape=(1024, 1024),
-        filter_cfg=dict(filter_empty_gt=True),
-        pipeline=train_pipeline
-        ))
-val_dataloader = dict(
-    batch_size=1,
-    num_workers=2,
-    persistent_workers=True,
-    drop_last=False,
-    sampler=dict(type='DefaultSampler', shuffle=False),
-    dataset=dict(
-        type=dataset_type,
-        data_root=data_root,
-        ann_file='trainval/annfiles/',
-        data_prefix=dict(img_path='trainval/images/'),
-        img_shape=(1024, 1024),
-        test_mode=True,
-        pipeline=val_pipeline
-        ))
+        ann_file='val_split/annfiles/',
+        data_prefix=dict(img_path='val_split/images/'),
+        pipeline=val_pipeline))
 test_dataloader = val_dataloader
 
 val_evaluator = dict(type='DOTAMetric', metric='mAP')
-test_evaluator = val_evaluator
+checkpoint_config = dict(interval=10)
 
-# inference on test dataset and format the output results
-# for submission. Note: the test set has no annotation.
-# test_dataloader = dict(
-#     batch_size=1,
-#     num_workers=2,
-#     persistent_workers=True,
-#     drop_last=False,
-#     sampler=dict(type='DefaultSampler', shuffle=False),
-#     dataset=dict(
-#         type=dataset_type,
-#         data_root=data_root,
-#         data_prefix=dict(img_path='test/images/'),
-#         img_shape=(1024, 1024),
-#         test_mode=True,
-#         pipeline=test_pipeline))
-# test_evaluator = dict(
-#     type='DOTAMetric',
-#     format_only=True,
-#     merge_patches=True,
-#     outfile_prefix='./work_dirs/dota/Task1')
+load_from = 'https://download.openmmlab.com/mmrotate/v0.1.0/roi_trans/roi_trans_r50_fpn_1x_dota_ms_rr_le90/roi_trans_r50_fpn_1x_dota_ms_rr_le90-fa99496f.pth'
+
+train_cfg = dict(val_interval=4)

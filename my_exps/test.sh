@@ -1,5 +1,5 @@
 #! /bin/bash
-env=mmrotate
+env=tzb-mmrotate
 source /disk0/r/anaconda3/etc/profile.d/conda.sh
 conda activate ${env}
 echo -e "\033[34m*******************************\033[0m"
@@ -25,5 +25,5 @@ if [ -d ${save_dir} ]; then
 fi
 
 CUDA_VISIBLE_DEVICES=${cuda} python tools/test.py \
-${config} ${ckpt} --format-only --eval-options submission_dir=${save_dir} nproc=1 ${args}
+${config} ${ckpt} --cfg-options submission_dir=${save_dir} nproc=1 ${args}
 
