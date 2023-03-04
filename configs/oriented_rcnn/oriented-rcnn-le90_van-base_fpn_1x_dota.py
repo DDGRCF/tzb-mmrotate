@@ -72,6 +72,7 @@ test_dataloader = dict(
         img_shape=(1024, 1024),
         test_mode=True,
         pipeline=test_pipeline))
+
 test_evaluator = dict(
     type='DOTAMetric',
     format_only=True,
