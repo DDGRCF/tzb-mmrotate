@@ -4,7 +4,7 @@ import os.path as osp
 from tqdm import tqdm
 import torch
 import matplotlib.pyplot as plt
-from mmrotate.core.bbox.transforms import poly2obb_le90
+from mmrotate.structures.bbox import qbox2rbox
 
 
 
@@ -32,7 +32,7 @@ def collect_areas(ann_dir):
                     polys.append(poly)
     print("this dataset has {} objects".format(len(polys)))
     polys = torch.tensor(polys)             
-    obbs = poly2obb_le90(polys)
+    obbs = qbox2rbox(polys)
     areas = obbs[:,2] * obbs[:,3]
     return areas.sort()
                     
