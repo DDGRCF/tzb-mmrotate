@@ -1,0 +1,3 @@
+/home/r/Scripts/2023-tianzhibei-competition/mmrotate/tools/data/custom/c_exec/build/CMakeFiles/rebuild_cache.dir
+/home/r/Scripts/2023-tianzhibei-competition/mmrotate/tools/data/custom/c_exec/build/CMakeFiles/edit_cache.dir
+/home/r/Scripts/2023-tianzhibei-competition/mmrotate/tools/data/custom/c_exec/build/CMakeFiles/dota_img_split.dir
