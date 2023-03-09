@@ -27,11 +27,13 @@ val_dataloader = dict(
         data_prefix=dict(img_path='val_split/images/'),
         data_root=data_root))
 
+val_evaluator = dict(metric='f1_score')
+
 train_cfg = dict(val_interval=2)
 checkpoint_config = dict(interval=3)
 
 
 optim_wrapper = dict(
-    #type='AmpOptimWrapper',
+    type='AmpOptimWrapper',
     optimizer=dict(lr=0.01)
 )
