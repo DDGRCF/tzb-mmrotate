@@ -1,11 +1,10 @@
 # Copyright (c) OpenMMLab. All rights reserved.
-from multiprocessing import get_context
-
 import numpy as np
 import torch
 from mmcv.ops import box_iou_quadri, box_iou_rotated
 from mmdet.evaluation.functional import average_precision
 from mmengine.logging import print_log
+from multiprocessing import get_context
 from terminaltables import AsciiTable
 
 
@@ -151,6 +150,114 @@ def get_cls_results(det_results, annotations, class_id, box_type):
                 raise NotImplementedError
 
     return cls_dets, cls_gts, cls_gts_ignore
+
+
+def eval_rbbox_f1score(det_results,
+                       annotations,
+                       scale_ranges=None,
+                       iou_thr=0.5,
+                       box_type='rbox',
+                       dataset=None,
+                       logger=None,
+                       nproc=4):
+    assert len(det_results) == len(annotations)
+
+    num_imgs = len(det_results)
+    num_scales = len(scale_ranges) if scale_ranges is not None else 1
+    num_classes = len(det_results[0])  # positive class num
+    area_ranges = ([(rg[0]**2, rg[1]**2) for rg in scale_ranges]
+                   if scale_ranges is not None else None)
+
+    pool = get_context('spawn').Pool(nproc)
+    eval_results = []
+    for i in range(num_classes):
+        # get gt and det bboxes of this class
+        cls_dets, cls_gts, cls_gts_ignore = get_cls_results(
+            det_results, annotations, i, box_type)
+
+        # compute tp and fp for each image with multiple processes
+        tpfp = pool.starmap(
+            tpfp_default,
+            zip(cls_dets, cls_gts, cls_gts_ignore,
+                [iou_thr for _ in range(num_imgs)],
+                [box_type for _ in range(num_imgs)],
+                [area_ranges for _ in range(num_imgs)]))
+        tp, fp = tuple(zip(*tpfp))
+        # calculate gt number of each scale
+        # ignored gts or gts beyond the specific scale are not counted
+        num_gts = np.zeros(num_scales, dtype=int)
+        for _, bbox in enumerate(cls_gts):
+            if area_ranges is None:
+                num_gts[0] += bbox.shape[0]
+            else:
+                if box_type == 'rbox':
+                    gt_areas = bbox[:, 2] * bbox[:, 3]
+                elif box_type == 'qbox':
+                    pts = bbox.reshape(*bbox.shape[:-1], 4, 2)
+                    roll_pts = torch.roll(pts, 1, dims=-2)
+                    xyxy = torch.sum(
+                        pts[..., 0] * roll_pts[..., 1] -
+                        roll_pts[..., 0] * pts[..., 1],
+                        dim=-1)
+                    gt_areas = 0.5 * torch.abs(xyxy)
+                else:
+                    raise NotImplementedError
+                for k, (min_area, max_area) in enumerate(area_ranges):
+                    num_gts[k] += np.sum((gt_areas >= min_area)
+                                         & (gt_areas < max_area))
+        # sort all det bboxes by score, also sort tp and fp
+        cls_dets = np.vstack(cls_dets)
+        num_dets = cls_dets.shape[0]
+        sort_inds = np.argsort(-cls_dets[:, -1])
+        tp = np.hstack(tp)[:, sort_inds]
+        fp = np.hstack(fp)[:, sort_inds]
+        # calculate recall and precision with tp and fp
+        # tp = np.cumsum(tp, axis=1)
+        # fp = np.cumsum(fp, axis=1)
+        tp = np.sum(tp, axis=1)
+        fp = np.sum(fp, axis=1)
+        eps = np.finfo(np.float32).eps
+        recalls = tp / np.maximum(num_gts[:, np.newaxis], eps)
+        precisions = tp / np.maximum((tp + fp), eps)
+        # calculate AP
+        if scale_ranges is None:
+            recalls = recalls[0].item()
+            precisions = precisions[0].item()
+            num_gts = num_gts.item()
+        f1_score = (2 * precisions * recalls + eps) / (precisions + recalls + eps)
+        eval_results.append({
+            'num_gts': num_gts,
+            'num_dets': num_dets,
+            'recall': recalls,
+            'precision': precisions,
+            'f1_score': f1_score,
+        })
+    pool.close()
+    if scale_ranges is not None:
+        # shape (num_classes, num_scales)
+        all_f1_score = np.vstack(
+            [cls_result['f1_score'] for cls_result in eval_results])
+        all_num_gts = np.vstack(
+            [cls_result['num_gts'] for cls_result in eval_results])
+        mean_f1_score = []
+        for i in range(num_scales):
+            if np.any(all_num_gts[:, i] > 0):
+                mean_f1_score.append(all_f1_score[all_num_gts[:, i] > 0,
+                                                  i].mean())
+            else:
+                mean_f1_score.append(0.0)
+    else:
+        f1_scores = []
+        for cls_result in eval_results:
+            if cls_result['num_gts'] > 0:
+                f1_scores.append(cls_result['f1_score'])
+
+        mean_f1_score = np.array(f1_scores).mean().item() if f1_scores else 0.0
+
+    print_f1_score_summary(
+        mean_f1_score, eval_results, dataset, area_ranges, logger=logger)
+
+    return mean_f1_score, eval_results
 
 
 def eval_rbbox_map(det_results,
@@ -354,6 +461,75 @@ def print_map_summary(mean_ap,
             ]
             table_data.append(row_data)
         table_data.append(['mAP', '', '', '', f'{mean_ap[i]:.3f}'])
+        table = AsciiTable(table_data)
+        table.inner_footing_row_border = True
+        print_log('\n' + table.table, logger=logger)
+
+
+def print_f1_score_summary(mean_f1_score,
+                           results,
+                           dataset=None,
+                           scale_ranges=None,
+                           logger=None):
+    """Print mAP and results of each class.
+
+    A table will be printed to show the gts/dets/recall/AP of each class and
+    the mAP.
+
+    Args:
+        mean_ap (float): Calculated from `eval_map()`.
+        results (list[dict]): Calculated from `eval_map()`.
+        dataset (list[str] | str, optional): Dataset name or dataset classes.
+        scale_ranges (list[tuple], optional): Range of scales to be evaluated.
+        logger (logging.Logger | str, optional): The way to print the mAP
+            summary. See `mmcv.utils.print_log()` for details.
+            Defaults to None.
+    """
+
+    if logger == 'silent':
+        return
+
+    if isinstance(results[0]['f1_score'], np.ndarray):
+        num_scales = len(results[0]['f1_score'])
+    else:
+        num_scales = 1
+
+    if scale_ranges is not None:
+        assert len(scale_ranges) == num_scales
+
+    num_classes = len(results)
+
+    recalls = np.zeros((num_scales, num_classes), dtype=np.float32)
+    precisions = np.zeros((num_scales, num_classes), dtype=np.float32)
+    f1_scores = np.zeros((num_scales, num_classes), dtype=np.float32)
+    num_gts = np.zeros((num_scales, num_classes), dtype=int)
+    for i, cls_result in enumerate(results):
+        recalls[:, i] = np.array(cls_result['recall'], ndmin=2)
+        precisions[:, i] = np.array(cls_result['precision'], ndmin=2)
+        f1_scores[:, i] = cls_result['f1_score']
+        num_gts[:, i] = cls_result['num_gts']
+
+    if dataset is None:
+        label_names = [str(i) for i in range(num_classes)]
+    else:
+        label_names = dataset
+
+    if not isinstance(mean_f1_score, list):
+        mean_f1_score = [mean_f1_score]
+
+    header = ['class', 'gts', 'dets', 'recall', 'precision', 'f1_score']
+    for i in range(num_scales):
+        if scale_ranges is not None:
+            print_log(f'Scale range {scale_ranges[i]}', logger=logger)
+        table_data = [header]
+        for j in range(num_classes):
+            row_data = [
+                label_names[j], num_gts[i, j], results[j]['num_dets'],
+                f'{recalls[i, j]:.3f}', f'{precisions[i, j]:.3f}', f'{f1_scores[i, j]:.3f}'
+            ]
+            table_data.append(row_data)
+        table_data.append(
+            ['mean_f1_score', '', '', '', '', f'{mean_f1_score[i]:.3f}'])
         table = AsciiTable(table_data)
         table.inner_footing_row_border = True
         print_log('\n' + table.table, logger=logger)
