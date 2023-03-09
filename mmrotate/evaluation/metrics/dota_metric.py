@@ -1,21 +1,20 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import copy
+import numpy as np
 import os
 import os.path as osp
 import re
 import tempfile
+import torch
 import zipfile
 from collections import OrderedDict, defaultdict
-from typing import List, Optional, Sequence, Union
-
-import numpy as np
-import torch
 from mmcv.ops import nms_quadri, nms_rotated
 from mmengine.evaluator import BaseMetric
 from mmengine.fileio import dump
 from mmengine.logging import MMLogger
+from typing import List, Optional, Sequence, Union
 
-from mmrotate.evaluation import eval_rbbox_map
+from mmrotate.evaluation import eval_rbbox_f1score, eval_rbbox_map
 from mmrotate.registry import METRICS
 from mmrotate.structures.bbox import rbox2qbox
 
@@ -87,9 +86,9 @@ class DOTAMetric(BaseMetric):
         if not isinstance(metric, str):
             assert len(metric) == 1
             metric = metric[0]
-        allowed_metrics = ['mAP']
+        allowed_metrics = ['mAP', 'f1_score']
         if metric not in allowed_metrics:
-            raise KeyError(f"metric should be one of 'mAP', but got {metric}.")
+            raise KeyError(f"metric should be one of {allowed_metrics}, but got {metric}.")
         self.metric = metric
         self.predict_box_type = predict_box_type
 
@@ -348,6 +347,26 @@ class DOTAMetric(BaseMetric):
                 eval_results[f'AP{int(iou_thr * 100):02d}'] = round(mean_ap, 3)
             eval_results['mAP'] = sum(mean_aps) / len(mean_aps)
             eval_results.move_to_end('mAP', last=False)
+        elif self.metric == 'f1_score':
+            assert isinstance(self.iou_thrs, list)
+            dataset_name = self.dataset_meta['classes']
+            dets = [pred['pred_bbox_scores'] for pred in preds]
+
+            mean_f1_scores = []
+            for iou_thr in self.iou_thrs:
+                logger.info(f'\n{"-" * 15}iou_thr: {iou_thr}{"-" * 15}')
+                mean_f1_score, _ = eval_rbbox_f1score(
+                    dets,
+                    gts,
+                    scale_ranges=self.scale_ranges,
+                    iou_thr=iou_thr,
+                    box_type=self.predict_box_type,
+                    dataset=dataset_name,
+                    logger=logger)
+                mean_f1_scores.append(mean_f1_score)
+                eval_results[f'f1_score{int(iou_thr * 100):02d}'] = round(mean_f1_score, 3)
+            eval_results['mean_f1_score'] = sum(mean_f1_scores) / len(mean_f1_scores)
+            eval_results.move_to_end('mean_f1_score', last=False)
         else:
             raise NotImplementedError
         return eval_results
