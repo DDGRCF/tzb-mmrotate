@@ -224,7 +224,11 @@ def eval_rbbox_f1score(det_results,
             recalls = recalls[0].item()
             precisions = precisions[0].item()
             num_gts = num_gts.item()
-        f1_score = (2 * precisions * recalls + eps) / (precisions + recalls + eps)
+        if num_gts > 0:
+            f1_score = (2 * precisions * recalls + eps) / (precisions + recalls + eps)
+        else:
+            f1_score = 0
+
         eval_results.append({
             'num_gts': num_gts,
             'num_dets': num_dets,
