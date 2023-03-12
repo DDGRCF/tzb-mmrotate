@@ -196,7 +196,7 @@ model = dict(
 )
 
 train_dataloader = dict(
-    batch_size=2)
+    batch_size=4)
 
 # set all layers in backbone to lr_mult=0.1
 # set all norm layers, position_embeding,
