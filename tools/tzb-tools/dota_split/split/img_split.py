@@ -109,7 +109,7 @@ def add_parser(parser):
         type=str,
         default="gdal",
         choices=["opencv", "tifffile", "gdal"],
-        help="the lib to load the images") # TODO:
+        help="the lib to load the images")  # TODO:
     # argument for saving
     parser.add_argument(
         '--save-dir',
@@ -125,8 +125,7 @@ def add_parser(parser):
         '--ignore-empty-patch',
         action='store_true',
         default=False,
-        help="whether ignore the empty path no not"
-    )
+        help="whether ignore the empty path no not")
 
 
 def parse_args():
@@ -301,7 +300,8 @@ def get_window_obj(info, windows, iof_thr):
 
 
 def crop_and_save_img(info, windows, window_anns, img_dir, no_padding,
-                      padding_value, save_dir, anno_dir, img_ext, ignore_empty_patch):
+                      padding_value, save_dir, anno_dir, img_ext,
+                      ignore_empty_patch):
     """
 
     Args:
@@ -342,14 +342,14 @@ def crop_and_save_img(info, windows, window_anns, img_dir, no_padding,
         ann['bboxes'] = translate(ann['bboxes'], -x_start, -y_start)
         patch_info['ann'] = ann
 
-        width, height = info["width"], info["height"] 
+        width, height = info["width"], info["height"]
         _x_stop = width if x_stop > width else x_stop
         _y_stop = height if y_stop > height else y_stop
         x_num, y_num = _x_stop - x_start, _y_stop - y_start
 
         patch = ds.ReadAsArray(x_start, y_start, x_num, y_num)
         assert patch is not None
-        
+
         patch = np.transpose(patch, [1, 2, 0])[:, :, ::-1]
         patch = np.ascontiguousarray(patch)
 
@@ -390,8 +390,8 @@ def crop_and_save_img(info, windows, window_anns, img_dir, no_padding,
 
 
 def single_split(arguments, sizes, gaps, img_rate_thr, iof_thr, no_padding,
-                 padding_value, save_dir, anno_dir, img_ext, ignore_empty_patch, 
-                 lock, prog, total, logger):
+                 padding_value, save_dir, anno_dir, img_ext,
+                 ignore_empty_patch, lock, prog, total, logger):
     """
 
     Args:
@@ -578,13 +578,14 @@ def response_makedirs(dirname: str, msg: str = None):
                 f"find exists {dirname}, do you want to" \
                 " delete it (yes or no): "
             ans = input(msg).lower()
-            if ans == "yes": 
+            if ans == "yes":
                 shutil.rmtree(dirname)
                 os.makedirs(dirname)
             elif ans == "no":
                 exit(0)
     else:
         os.makedirs(dirname)
+
 
 def main():
     """Main function of image split."""
@@ -648,5 +649,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
     main()
