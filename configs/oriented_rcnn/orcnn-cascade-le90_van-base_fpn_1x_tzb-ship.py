@@ -26,6 +26,7 @@ custom_keys={'absolute_pos_embed': dict(decay_mult=0.),
              'norm': dict(decay_mult=0.)}
 
 optim_wrapper = dict(
+    type='OptimWrapper',
     clip_grad=dict(max_norm=5.0),
     optimizer=dict(
         _delete_=True,
