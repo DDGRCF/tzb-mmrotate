@@ -139,3 +139,7 @@ model = dict(
             max_per_img=2000)))
 
 optim_wrapper = dict(optimizer=dict(lr=0.005))
+
+train_dataloader = dict(
+    batch_size=1,
+    num_workers=1)

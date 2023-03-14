@@ -11,7 +11,7 @@ from terminaltables import AsciiTable
 def tpfp_default(det_bboxes,
                  gt_bboxes,
                  gt_bboxes_ignore=None,
-                 iou_thr=0.1,
+                 iou_thr=0.5,
                  box_type='rbox',
                  area_ranges=None):
     """Check if detected bboxes are true positive or false positive.
@@ -155,7 +155,7 @@ def get_cls_results(det_results, annotations, class_id, box_type):
 def eval_rbbox_f1score(det_results,
                        annotations,
                        scale_ranges=None,
-                       iou_thr=0.1,
+                       iou_thr=0.5,
                        box_type='rbox',
                        dataset=None,
                        logger=None,
@@ -208,14 +208,14 @@ def eval_rbbox_f1score(det_results,
         # sort all det bboxes by score, also sort tp and fp
         cls_dets = np.vstack(cls_dets)
         num_dets = cls_dets.shape[0]
-        sort_inds = np.argsort(-cls_dets[:, -1])
-        tp = np.hstack(tp)[:, sort_inds]
-        fp = np.hstack(fp)[:, sort_inds]
+        # sort_inds = np.argsort(-cls_dets[:, -1])
+        # tp = np.hstack(tp)[:, sort_inds]
+        # fp = np.hstack(fp)[:, sort_inds]
         # calculate recall and precision with tp and fp
         # tp = np.cumsum(tp, axis=1)
         # fp = np.cumsum(fp, axis=1)
-        tp = np.sum(tp, axis=1)
-        fp = np.sum(fp, axis=1)
+        tp = np.hstack(tp).sum(axis=1)
+        fp = np.hstack(fp).sum(axis=1)
         eps = np.finfo(np.float32).eps
         recalls = tp / np.maximum(num_gts[:, np.newaxis], eps)
         precisions = tp / np.maximum((tp + fp), eps)
@@ -225,7 +225,7 @@ def eval_rbbox_f1score(det_results,
             precisions = precisions[0].item()
             num_gts = num_gts.item()
         if num_gts > 0:
-            f1_score = (2 * precisions * recalls + eps) / (precisions + recalls + eps)
+            f1_score = (2 * precisions * recalls) / (precisions + recalls)
         else:
             f1_score = 0
 
@@ -267,7 +267,7 @@ def eval_rbbox_f1score(det_results,
 def eval_rbbox_map(det_results,
                    annotations,
                    scale_ranges=None,
-                   iou_thr=0.1,
+                   iou_thr=0.5,
                    use_07_metric=True,
                    box_type='rbox',
                    dataset=None,

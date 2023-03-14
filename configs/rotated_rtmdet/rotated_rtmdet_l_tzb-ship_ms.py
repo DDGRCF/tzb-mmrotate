@@ -14,9 +14,8 @@ load_from = 'https://download.openmmlab.com/mmrotate/v1.0/rotated_rtmdet/rotated
 dataset_type = "TzbShipDataset"
 data_root = 'data/Tianzhi/ship/'
 
-train_dataloader = dict(batch_size=8, num_workers=4)
-
 train_dataloader = dict(
+    batch_size=8, num_workers=4,
     dataset=dict(
         type=dataset_type,
         ann_file='train_split/annfiles/',
@@ -25,7 +24,7 @@ train_dataloader = dict(
         data_root=data_root))
 
 val_dataloader = dict(
-    batch_size=4,
+    batch_size=8,
     num_workers=4,
     dataset=dict(
         type=dataset_type,
@@ -35,4 +34,7 @@ val_dataloader = dict(
 
 # learning rate
 checkpoint_config = dict(interval=10)
-train_cfg = dict(val_interval=2)
+train_cfg = dict(val_interval=4)
+
+val_evaluator = dict(metric='f1_score', iou_thre=0.1)
+test_evaluator = dict(metric='f1_score', iou_thre=0.1)

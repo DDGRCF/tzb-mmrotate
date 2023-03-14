@@ -1,8 +1,6 @@
-_base_ = ['./oriented-rcnn-le90_r50_fpn_1x_dota.py']
+_base_ = './oriented-rcnn-le90_r50_fpn_1x_dota.py'
 
 angle_version = 'le90'
-file_client_args = dict(backend='disk')
-
 
 model = dict(
     data_preprocessor=dict(
@@ -29,37 +27,8 @@ val_dataloader = dict(
         data_prefix=dict(img_path='val_split/images/'),
         data_root=data_root))
 
-val_evaluator = dict(metric='f1_score', iou_thrs=0.1)
-
-test_pipeline = [
-    dict(type='mmdet.LoadImageFromFile', file_client_args=file_client_args),
-    dict(type='mmdet.Resize', scale=(1024, 1024), keep_ratio=True),
-    # avoid bboxes being resized
-    dict(type='mmdet.LoadAnnotations', with_bbox=True, box_type='qbox'),
-    dict(type='ConvertBoxType', box_type_mapping=dict(gt_bboxes='rbox')),
-    dict(
-        type='mmdet.PackDetInputs',
-        meta_keys=('img_id', 'img_path', 'ori_shape', 'img_shape',
-                   'scale_factor'))
-]
-
-test_dataloader = dict(
-    _delete_ = True,
-    batch_size=1,
-    num_workers=2,
-    persistent_workers=True,
-    drop_last=False,
-    sampler=dict(type='DefaultSampler', shuffle=False),
-    dataset=dict(
-        type=dataset_type,
-        data_root=data_root,
-        ann_file='val_split/annfiles/',
-        data_prefix=dict(img_path='val_split/images/'),
-        img_shape=(1024, 1024),
-        test_mode=True,
-        pipeline=test_pipeline))
-
-test_evaluator = val_evaluator
+val_evaluator = dict(metric='f1_score')
+test_evaluator = dict(metric='f1_score')
 
 train_cfg = dict(val_interval=2)
 checkpoint_config = dict(interval=3)

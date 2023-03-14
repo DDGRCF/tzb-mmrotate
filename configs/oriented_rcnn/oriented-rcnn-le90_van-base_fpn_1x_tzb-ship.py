@@ -22,8 +22,8 @@ data_root = 'data/Tianzhi/ship/'
 train_dataloader = dict(
     dataset=dict(
         type=dataset_type,
-        ann_file='train_split/annfiles/',
-        data_prefix=dict(img_path='train_split/images/'),
+        ann_file='train_split_Bk/annfiles/',
+        data_prefix=dict(img_path='train_split_Bk/images/'),
         filter_cfg=dict(filter_empty_gt=True),
         data_root=data_root))
 
