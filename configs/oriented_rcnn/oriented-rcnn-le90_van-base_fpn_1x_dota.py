@@ -37,9 +37,9 @@ model = dict(
         out_indices=(0, 1, 2, 3),
         drop_rate=0.,
         drop_path_rate=0.2,
-        # norm_cfg=dict(type='LN', requires_grad=True),
-        # block_cfgs=dict(
-        #     norm_cfg=dict(type='BN', requires_grad=True)),
+        norm_cfg=dict(type='LN', requires_grad=True),
+        block_cfgs=dict(
+            norm_cfg=dict(type='BN', requires_grad=True)),
         init_cfg=dict(type='Pretrained', checkpoint=pretrained)),
     neck=dict(
         in_channels=van_zoo[arch]["outs"]),
@@ -90,5 +90,7 @@ optim_wrapper = dict(
         betas=(0.9, 0.999),
         weight_decay=0.05),
     paramwise_cfg=dict(_delete_=True, custom_keys=custom_keys, norm_decay_mult=0.0))
+
+val_evaluator = dict(metric="f1_score", iou_thrs=0.1)
 
 max_epochs = 12
