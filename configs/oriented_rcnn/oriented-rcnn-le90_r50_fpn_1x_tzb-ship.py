@@ -9,7 +9,12 @@ model = dict(
         bgr_to_rgb=False),
     roi_head=dict(
         bbox_head=dict(
-            num_classes=1)))
+            num_classes=1)),
+    test_cfg=dict(
+        rcnn=dict(
+            score_thr=0.3
+        )
+    ))
 
 dataset_type = 'TzbShipDataset'
 data_root = 'data/Tianzhi/ship/'
