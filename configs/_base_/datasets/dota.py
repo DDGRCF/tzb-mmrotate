@@ -14,6 +14,7 @@ train_pipeline = [
         direction=['horizontal', 'vertical', 'diagonal']),
     dict(type='mmdet.PackDetInputs')
 ]
+
 val_pipeline = [
     dict(type='mmdet.LoadImageFromFile', file_client_args=file_client_args),
     dict(type='mmdet.Resize', scale=(1024, 1024), keep_ratio=True),
