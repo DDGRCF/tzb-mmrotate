@@ -54,8 +54,12 @@ model = dict(
                     loss_weight=1.0),
                 loss_bbox=dict(
                     type='mmdet.SmoothL1Loss', beta=1.0, loss_weight=1.0))
-        ])
-
+        ]),
+    test_cfg=dict(
+        rcnn=dict(
+            score_thr=0.3
+        )
+    )
 )
 
 dataset_type = 'TzbShipDataset'
@@ -78,7 +82,7 @@ val_dataloader = dict(
 
 val_evaluator = dict(metric='f1_score', iou_thrs=0.1)
 
-train_cfg = dict(val_evaulator=2)
+train_cfg = dict(val_interval=2)
 
 optim_wrapper = dict(
     type='AmpOptimWrapper',
