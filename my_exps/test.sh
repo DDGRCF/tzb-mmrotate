@@ -25,5 +25,5 @@ if [ -d ${save_dir} ]; then
 fi
 
 CUDA_VISIBLE_DEVICES=${cuda} python tools/test.py \
-${config} ${ckpt} --cfg-options submission_dir=${save_dir} nproc=1 ${args}
+${config} ${ckpt} --cfg-options submission_dir=${save_dir} nproc=1 ${args} 
 

@@ -1,9 +1,8 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 import glob
 import os.path as osp
-from typing import List, Tuple
-
 from mmengine.dataset import BaseDataset
+from typing import List, Tuple
 
 from mmrotate.registry import DATASETS
 
@@ -42,9 +41,11 @@ class DOTADataset(BaseDataset):
     def __init__(self,
                  img_shape: Tuple[int, int] = (1024, 1024),
                  diff_thr: int = 100,
+                 img_suffix = '.png',
                  **kwargs) -> None:
         self.img_shape = img_shape
         self.diff_thr = diff_thr
+        self.img_suffix = img_suffix
         super().__init__(**kwargs)
 
     def load_data_list(self) -> List[dict]:
@@ -58,7 +59,7 @@ class DOTADataset(BaseDataset):
         data_list = []
         if self.ann_file == '':
             img_files = glob.glob(
-                osp.join(self.data_prefix['img_path'], '*.png'))
+                osp.join(self.data_prefix['img_path'], self.img_suffix))
             for img_path in img_files:
                 data_info = {}
                 data_info['img_path'] = img_path
@@ -83,7 +84,7 @@ class DOTADataset(BaseDataset):
                 data_info = {}
                 img_id = osp.split(txt_file)[1][:-4]
                 data_info['img_id'] = img_id
-                img_name = img_id + '.png'
+                img_name = img_id + self.img_suffix 
                 data_info['file_name'] = img_name
                 data_info['img_path'] = osp.join(self.data_prefix['img_path'],
                                                  img_name)

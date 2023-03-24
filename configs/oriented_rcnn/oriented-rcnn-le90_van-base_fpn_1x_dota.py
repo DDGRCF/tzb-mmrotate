@@ -1,6 +1,6 @@
 _base_ = './oriented-rcnn-le90_r50_fpn_1x_dota.py'
 
-pretrained = 'https://download.openmmlab.com/mmclassification/v0/van/van-base_8xb128_in1k_20220501-6a4cc31b.pth'
+load_from = 'https://download.openmmlab.com/mmclassification/v0/van/van-base_8xb128_in1k_20220501-6a4cc31b.pth'
 
 test_pipeline = _base_.test_pipeline
 dataset_type = _base_.dataset_type
@@ -31,7 +31,7 @@ model = dict(
         bgr_to_rgb=False),
     backbone=dict(
         _delete_=True,
-        type='VAN',
+        type='mmcls.VAN',
         frozen_stages=1,
         arch=arch,
         out_indices=(0, 1, 2, 3),
@@ -39,8 +39,7 @@ model = dict(
         drop_path_rate=0.2,
         norm_cfg=dict(type='LN', requires_grad=True),
         block_cfgs=dict(
-            norm_cfg=dict(type='BN', requires_grad=True)),
-        init_cfg=dict(type='Pretrained', checkpoint=pretrained)),
+            norm_cfg=dict(type='BN', requires_grad=True))),
     neck=dict(
         in_channels=van_zoo[arch]["outs"]),
     rpn_head=dict(
